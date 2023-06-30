@@ -1,0 +1,49 @@
+trigger:
+- none
+
+pool:
+  vmImage: 'ubuntu-latest' 
+
+variables:
+  subscription: "terraform-spn"
+  devTerraformDirectory: "$(System.DefaultWorkingDirectory)/src/tf/dev"
+  testTerraformDirectory: "$(System.DefaultWorkingDirectory)/src/tf/test"
+  prodTerraformDirectory: "$(System.DefaultWorkingDirectory)/src/tf/prod"
+  
+stages:
+
+- stage: Dev
+  jobs:
+  - template: tf-provision-ci-jobs.yaml
+    parameters:
+      environment: test
+      subscription: 'terraform-spn' 
+      workingTerraformDirectory: $(devTerraformDirectory)
+      backendAzureRmResourceGroupName: 'test-tfstate-rg'
+      backendAzureRmStorageAccountName: 'testtf32oil0l'
+      backendAzureRmContainerName: 'core-tfstate'
+      backendAzureRmKey: 'terraform.tfstate'
+
+- stage: Test
+  jobs:
+  - template: tf-provision-ci-jobs.yaml
+    parameters:
+      environment: test
+      subscription: 'terraform-spn' 
+      workingTerraformDirectory: $(testTerraformDirectory)
+      backendAzureRmResourceGroupName: 'test-tfstate-rg'
+      backendAzureRmStorageAccountName: 'testtf32oil0l'
+      backendAzureRmContainerName: 'core-tfstate-test'
+      backendAzureRmKey: 'terraform.tfstate'
+      
+- stage: Prod
+  jobs:
+  - template: tf-provision-ci-jobs.yaml
+    parameters:
+      environment: prod
+      subscription: 'terraform-spn' 
+      prodTerraformDirectory: $(prodTerraformDirectory)
+      backendAzureRmResourceGroupName: 'prod-tfstate-rg'
+      backendAzureRmStorageAccountName: 'sanllzcognitiveservice'
+      backendAzureRmContainerName: 'core-tfstate-prod'
+      backendAzureRmKey: 'terraform.tfstate'

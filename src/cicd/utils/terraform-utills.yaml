@@ -1,0 +1,24 @@
+trigger:
+- none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  subscription: "sub-syngenta-nonprod-nllz-001_SPN"
+  
+steps:
+
+- task: TerraformInstaller@0
+  displayName: 'install'
+  inputs:
+    terraformVersion: '1.3.5'
+
+# Destroy/Deproviosion previously-created infrastructure [ONLY FOR TEST PURPOSES. Do not use on the PROD]
+- task: TerraformTaskV1@0
+  displayName: Destroy previously-created infrastructure with Terrafom
+  inputs:
+    provider: 'azurerm'
+    command: 'destroy'
+    workingDirectory: $(System.DefaultWorkingDirectory)/src
+    environmentServiceNameAzureRM: 'sub-syngenta-nonprod-nllz-001_SPN'

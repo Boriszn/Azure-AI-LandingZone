@@ -1,0 +1,61 @@
+trigger:
+- none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  subscription: "terraform-spn"
+  
+steps:
+
+# Prepare working directory for other commands
+- task: TerraformTaskV3@3
+  displayName: Initialise Terraform Configuration
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    workingDirectory: $(System.DefaultWorkingDirectory)/src
+    backendServiceArm: 'environmentServiceNameAzureRM'
+    backendAzureRmResourceGroupName: 'test-tfstate-rg'
+    backendAzureRmStorageAccountName: 'testtf32oil0l'
+    backendAzureRmContainerName: 'core-tfstate'
+    backendAzureRmKey: 'terraform.tfstate'
+
+# Show the current state or a saved plan
+- task: TerraformTaskV3@3
+  displayName: Show the current state or a saved plan
+  inputs:
+    provider: 'azurerm'
+    command: 'show'
+    outputTo: 'console'
+    outputFormat: 'default'
+    workingDirectory: $(System.DefaultWorkingDirectory)/src
+    environmentServiceNameAzureRM: 'terraform-spn'
+
+# Validate Terraform Configuration
+- task: TerraformTaskV3@3
+  displayName: Validate Terraform Configuration
+  inputs:
+      provider: 'azurerm'
+      command: 'validate'
+      workingDirectory: $(System.DefaultWorkingDirectory)/src
+
+# Show changes required by the current configuration
+- task: TerraformTaskV3@3
+  displayName: Build Terraform Plan
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: $(System.DefaultWorkingDirectory)/src
+    environmentServiceNameAzureRM: 'terraform-spn'
+
+# Create or update infrastructure
+- task: TerraformTaskV3@3
+  displayName: Apply Terraform Plan
+  continueOnError: true
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    workingDirectory: $(System.DefaultWorkingDirectory)/src
+    environmentServiceNameAzureRM: 'terraform-spn'

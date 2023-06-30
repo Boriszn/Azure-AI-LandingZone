@@ -1,0 +1,64 @@
+jobs:
+- deployment: deploy
+  displayName: AI LZ Deployments
+  pool:
+    vmImage: 'ubuntu-latest'
+  
+  environment: ${{ parameters.environment }}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+
+        - checkout: self
+
+        # Prepare working directory for other commands
+        - task: TerraformTaskV3@3
+          displayName: Initialise Terraform Configuration
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: ${{ parameters.workingTerraformDirectory }}
+            backendServiceArm: ${{ parameters.subscription }}
+            backendAzureRmResourceGroupName: ${{ parameters.backendAzureRmResourceGroupName }}
+            backendAzureRmStorageAccountName: ${{ parameters.backendAzureRmStorageAccountName }}
+            backendAzureRmContainerName: ${{ parameters.backendAzureRmContainerName }}
+            backendAzureRmKey: ${{ parameters.backendAzureRmKey }}
+
+        # Show the current state or a saved plan
+        - task: TerraformTaskV3@3
+          displayName: Show the current state or a saved plan
+          inputs:
+            provider: 'azurerm'
+            command: 'show'
+            outputTo: 'console'
+            outputFormat: 'default'
+            workingDirectory: ${{ parameters.workingTerraformDirectory }}
+            environmentServiceNameAzureRM: ${{ parameters.subscription }}
+
+        # Validate Terraform Configuration
+        - task: TerraformTaskV3@3
+          displayName: Validate Terraform Configuration
+          inputs:
+              provider: 'azurerm'
+              command: 'validate'
+              workingDirectory: ${{ parameters.workingTerraformDirectory }}
+
+        # Show changes required by the current configuration
+        - task: TerraformTaskV3@3
+          displayName: Build Terraform Plan
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            workingDirectory: ${{ parameters.workingTerraformDirectory }}
+            environmentServiceNameAzureRM: ${{ parameters.subscription }}
+
+        # Create or update infrastructure
+        - task: TerraformTaskV3@3
+          displayName: Apply Terraform Plan
+          continueOnError: true
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            environmentServiceNameAzureRM: ${{ parameters.subscription }}
+            workingDirectory: ${{ parameters.workingTerraformDirectory }}
